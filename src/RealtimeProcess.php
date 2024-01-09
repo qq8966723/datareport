@@ -21,26 +21,30 @@ class RealtimeProcess
     public function __construct($projectEnv)
     {
         if ($projectEnv == 0) {
-            $this->baseUrl = 'http://teststat.udax.id/api/';
+            $this->baseUrl = 'http://teststat.toolsvqdr.com/api/';
         } else {
-            $this->baseUrl = 'http://stat.udax.id/api/';
+            $this->baseUrl = 'http://stat-sg.toolsvqdr.com/api/';
         }
     }
+
     /**
-     * [sendOut 调用计费服务器各上报接口]
-     * @author tux (8966723@qq.com) 2019-12-06
-     * @param  [type] $url  [接口地址]
-     * @param  [type] $data [上报数据]
-     * @return [type]       [description]
+     * sendOut 调用计费服务器各上报接口
+     * @param $url
+     * @param $data
+     * @return mixed
+     * @throws \Error
+     * @throws \Exception
      */
     public function sendOut($url, $data)
     {
         $url = $this->baseUrl . $url;
         try {
             return $this->doPost($url, json_encode($data));
-        } catch (Exception $ex) {
-            //
-        };
+        } catch (\Exception $ex) {
+            throw $ex;
+        } catch (\Error $ex) {
+            throw $ex;
+        }
     }
     /*
     get
@@ -58,7 +62,7 @@ class RealtimeProcess
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         // 不从证书中检查SSL加密算法是否存在
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 2000);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 5000);
         //执行并获取HTML文档内容
         $output = curl_exec($ch);
         //释放curl句柄
@@ -87,9 +91,17 @@ class RealtimeProcess
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         // 不从证书中检查SSL加密算法是否存在
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 2000);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 5000);
         $output = curl_exec($ch);
+        $error  = curl_error($ch);
+        $info   = curl_getinfo($ch);
         curl_close($ch);
+        if ($error || $info['http_code'] != 200) {
+            if ($error) {
+                throw new \Exception($error . ' 上报数据为：' . json_encode($data));
+            }
+            throw new \Exception('curl request failed ' . ' 上报数据为：' . json_encode($data));
+        }
         return $output;
     }
 }
